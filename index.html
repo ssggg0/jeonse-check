@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>전세체크 — 매물 위험도 통합 스캐너</title>
+<style>
+:root{
+  --navy:#0F2542;
+  --navy2:#16355C;
+  --ink:#111C2E;
+  --sub:#5C6B80;
+  --sub2:#8794A6;
+  --line:#E3E9F1;
+  --line2:#EDF1F7;
+  --bg:#F5F8FC;
+  --blue:#1F5AA6;
+  --safe:#0C8A68;
+  --safe-bg:#E7F6F0;
+  --warn:#B9760B;
+  --warn-bg:#FDF3E1;
+  --danger:#C0392F;
+  --danger-bg:#FDECE9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+html{background:#F5F8FC}
+body{
+  background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+  -webkit-font-smoothing:antialiased;letter-spacing:-0.012em;
+  word-break:keep-all;overflow-wrap:break-word;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+body.lock{overflow:hidden}
+.wrap{max-width:430px;margin:0 auto;padding:0 18px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+.hd{
+  position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);
+}
+.hd-in{
+  max-width:430px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  height:calc(52px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 18px 0;
+}
+.brand{display:flex;align-items:center;gap:8px}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--navy);display:flex;align-items:center;justify-content:center}
+.brand b{font-size:15.5px;font-weight:700;letter-spacing:-0.03em;color:var(--navy)}
+.beta{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--blue);border:1px solid #CFE0F3;background:#F1F7FD;padding:3px 7px;border-radius:5px}
+.hd-link{font-size:11px;color:var(--sub);text-decoration:none;display:flex;align-items:center;gap:4px}
+
+/* ---------- intro ---------- */
+.intro{padding:20px 0 14px}
+.intro h1{margin:0;font-size:24px;font-weight:720;letter-spacing:-0.045em;line-height:1.28;color:var(--navy)}
+.intro h1 b{color:var(--blue)}
+.intro p{margin:7px 0 0;font-size:12px;color:var(--sub);line-height:1.6}
+
+/* ---------- risk card ---------- */
+.risk{
+  border-radius:20px;padding:18px 18px 0;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#122B4C 0%,#0E2340 55%,#0B1D36 100%);
+  box-shadow:0 14px 32px -22px rgba(15,37,66,.8);
+}
+.risk:after{
+  content:"";position:absolute;right:-70px;top:-90px;width:210px;height:210px;border-radius:50%;
+  background:radial-gradient(circle,rgba(90,160,255,.16),transparent 66%);pointer-events:none;
+}
+.r-top{display:flex;align-items:center;justify-content:space-between;position:relative}
+.r-top span{font-size:10.5px;letter-spacing:.1em;color:rgba(255,255,255,.55)}
+.r-top b{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.8)}
+.r-main{display:flex;align-items:flex-end;justify-content:space-between;margin-top:9px;position:relative}
+.r-label{font-size:40px;font-weight:740;letter-spacing:-0.05em;line-height:1}
+.r-label[data-b="safe"]{color:#5BE0AF}
+.r-label[data-b="warn"]{color:#FFC861}
+.r-label[data-b="danger"]{color:#FF8C82}
+.r-sub{font-size:11.5px;color:rgba(255,255,255,.62);margin-top:8px;line-height:1.55;max-width:250px}
+.r-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin:15px 0 0;overflow:hidden;position:relative}
+.r-bar i{display:block;height:100%;border-radius:3px;transition:width .45s ease,background .3s}
+.r-ticks{display:flex;justify-content:space-between;font-size:8.5px;color:rgba(255,255,255,.32);margin-top:5px;letter-spacing:.02em}
+.r-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,.1);
+  margin:16px -18px 0;border-top:1px solid rgba(255,255,255,.1);
+}
+.r-grid > div{background:#0D2140;padding:12px 12px 14px}
+.r-grid span{display:block;font-size:9.5px;color:rgba(255,255,255,.48);margin-bottom:4px}
+.r-grid b{font-size:13.5px;font-weight:650;letter-spacing:-0.02em;color:#fff}
+.r-grid b.sm{font-size:12px}
+.r-grid b.ok{color:#5BE0AF}
+.r-grid b.no{color:#FF8C82}
+
+/* ---------- samples ---------- */
+.samples{display:flex;gap:8px;margin-top:11px}
+.smp{
+  flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 10px;
+  font:inherit;font-size:11.5px;font-weight:600;color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  transition:border-color .16s,background .16s,transform .12s;
+}
+.smp:active{transform:scale(.985)}
+.smp:hover{border-color:#C7D7EA;background:#FBFDFF}
+.smp i{width:6px;height:6px;border-radius:50%;display:block}
+.smp.safe i{background:var(--safe)}
+.smp.risk i{background:var(--danger)}
+.smp small{font-weight:500;color:var(--sub2);font-size:10px}
+
+/* ---------- section ---------- */
+.sec{margin-top:22px;scroll-margin-top:70px}
+.sec-h{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:10px;padding:0 2px}
+.sec-h h2{margin:0;font-size:15.5px;font-weight:700;letter-spacing:-0.03em;color:var(--navy)}
+.sec-h p{margin:2px 0 0;font-size:11px;color:var(--sub2)}
+.sec-h .k{font-size:9.5px;letter-spacing:.1em;color:var(--sub2);font-weight:600}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:16px}
+.pad{padding:15px 16px}
+
+/* ---------- money fields ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mf{
+  background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px 9px;
+  transition:border-color .18s,box-shadow .18s;
+}
+.mf:focus-within{border-color:#8FB4DD;box-shadow:0 0 0 3px rgba(31,90,166,.07)}
+.mf label{display:block;font-size:11px;font-weight:600;color:var(--sub);letter-spacing:-0.01em}
+.mf .in{display:flex;align-items:baseline;gap:3px;margin-top:5px}
+.mf input{
+  width:100%;min-width:0;border:0;outline:none;background:none;color:var(--navy);
+  font:inherit;font-size:18px;font-weight:680;letter-spacing:-0.03em;padding:0;
+  font-variant-numeric:tabular-nums;
+}
+.mf input::placeholder{color:#C2CCD9;font-weight:600}
+.mf .u{font-size:10px;color:var(--sub2);white-space:nowrap}
+.mf .conv{font-size:9.5px;color:var(--sub2);margin-top:2px;min-height:13px;letter-spacing:-0.01em}
+.mf.wide{grid-column:1 / -1}
+
+/* ---------- segmented ---------- */
+.seg{display:flex;gap:6px;margin-top:9px}
+.seg button{
+  flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 8px;
+  font:inherit;font-size:11.5px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .15s;
+}
+.seg button[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.seg.tight button[aria-pressed="true"]{background:#FBEFE8;border-color:#E8C3AE;color:#9C4B1B}
+.seg.tight button[aria-pressed="false"]{color:#8C9AAB}
+.row-label{font-size:11.5px;font-weight:600;color:var(--ink);margin-top:14px;display:flex;justify-content:space-between;align-items:center}
+.row-label span{font-weight:500;color:var(--sub2);font-size:10px}
+
+/* ---------- ratio ---------- */
+.ratio-num{display:flex;align-items:baseline;gap:4px;margin-bottom:2px}
+.ratio-num b{font-size:30px;font-weight:740;letter-spacing:-0.04em;color:var(--navy)}
+.ratio-num span{font-size:12px;color:var(--sub2);font-weight:600}
+.ratio-note{font-size:11px;color:var(--sub);line-height:1.55;margin-top:6px}
+.bar{height:8px;border-radius:4px;background:#EEF2F8;margin-top:12px;position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;transition:width .4s ease,background .3s}
+.bar:before,.bar:after{content:"";position:absolute;top:0;bottom:0;width:1px;background:rgba(15,37,66,.16);z-index:2}
+.bar:before{left:70%}
+.bar:after{left:80%}
+.scale{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--sub2)}
+
+/* ---------- rows ---------- */
+.rows{display:grid;gap:0}
+.rw{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--line2);font-size:12px}
+.rw:last-child{border-bottom:0}
+.rw span{color:var(--sub)}
+.rw span em{font-style:normal;font-size:9.5px;color:var(--sub2);margin-left:4px}
+.rw b{font-weight:650;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rw.tot{padding:12px 0 4px;border-bottom:0}
+.rw.tot span{color:var(--ink);font-weight:650}
+.rw.tot b{font-size:15px;color:var(--navy)}
+.verdict{
+  margin-top:10px;border-radius:10px;padding:10px 12px;font-size:11.5px;line-height:1.55;font-weight:600;
+}
+.verdict.ok{background:var(--safe-bg);color:#0A6B51}
+.verdict.no{background:var(--danger-bg);color:#9B2F26}
+.verdict.warn{background:var(--warn-bg);color:#8A5A08}
+.fine{font-size:9.5px;color:var(--sub2);line-height:1.6;margin-top:10px}
+
+/* ---------- factors ---------- */
+.fact{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--line2);align-items:flex-start}
+.fact:last-child{border-bottom:0}
+.fact .ic{width:16px;height:16px;border-radius:50%;flex:0 0 16px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.fact.d .ic{background:var(--danger-bg)}
+.fact.w .ic{background:var(--warn-bg)}
+.fact.o .ic{background:var(--safe-bg)}
+.fact .tx{flex:1;min-width:0}
+.fact b{display:block;font-size:12px;font-weight:650;color:var(--ink);letter-spacing:-0.01em}
+.fact p{margin:2px 0 0;font-size:10.5px;color:var(--sub);line-height:1.55}
+.fact .pt{font-size:10.5px;font-weight:700;color:var(--danger);white-space:nowrap;margin-top:1px}
+.fact .pt.o{color:var(--safe)}
+.empty{padding:22px 8px;text-align:center;font-size:11.5px;color:var(--sub2);line-height:1.6}
+
+/* ---------- checklist ---------- */
+.chk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chk-head .cnt{font-size:11px;color:var(--sub);font-weight:600}
+.chk-head .cnt b{color:var(--navy);font-size:12.5px}
+.chk-bar{height:4px;border-radius:2px;background:#EEF2F8;margin-bottom:4px;overflow:hidden}
+.chk-bar i{display:block;height:100%;background:var(--blue);border-radius:2px;transition:width .35s}
+.chk{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line2);align-items:flex-start;cursor:pointer}
+.chk:last-child{border-bottom:0}
+.chk .box{
+  flex:0 0 19px;width:19px;height:19px;border-radius:6px;border:1.5px solid #C9D4E2;background:#fff;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;padding:0;
+}
+.chk.on .box{background:var(--navy);border-color:var(--navy)}
+.chk .box svg{opacity:0}
+.chk.on .box svg{opacity:1}
+.chk .ct{flex:1;min-width:0}
+.chk .ct b{display:block;font-size:12px;font-weight:650;letter-spacing:-0.01em}
+.chk .ct p{margin:2px 0 0;font-size:10.5px;color:var(--sub);line-height:1.55}
+.chk .flag{flex:0 0 auto;font-size:9px;font-weight:700;letter-spacing:.02em;padding:3px 6px;border-radius:5px;margin-top:1px}
+.flag.auto-ok{background:var(--safe-bg);color:#0A6B51}
+.flag.auto-warn{background:var(--warn-bg);color:#8A5A08}
+.flag.auto-bad{background:var(--danger-bg);color:#9B2F26}
+.flag.manual{background:#F1F5FA;color:#7C8A9C}
+.chk.auto{cursor:default}
+
+/* ---------- report ---------- */
+.rep{
+  border-radius:18px;padding:17px 16px;border:1px solid #DCE7F4;
+  background:linear-gradient(165deg,#FFFFFF,#F7FBFF);
+}
+.rep-top{display:flex;align-items:center;justify-content:space-between}
+.rep .tag{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--blue);background:#EAF3FD;padding:3px 7px;border-radius:5px}
+.rep h3{margin:9px 0 4px;font-size:15.5px;font-weight:700;letter-spacing:-0.03em;color:var(--navy)}
+.rep .d{margin:0;font-size:11.5px;color:var(--sub);line-height:1.6}
+.rep .price{display:flex;align-items:baseline;gap:6px;margin-top:10px}
+.rep .price b{font-size:19px;font-weight:740;letter-spacing:-0.03em;color:var(--navy)}
+.rep .price s{font-size:11px;color:var(--sub2)}
+.rep .price span{font-size:10px;font-weight:700;color:var(--safe);background:var(--safe-bg);padding:3px 6px;border-radius:4px}
+.rep ul{list-style:none;margin:12px 0 14px;padding:0;display:grid;gap:7px}
+.rep li{display:flex;gap:7px;font-size:11px;color:#3E4C5F;line-height:1.5}
+.rep li i{flex:0 0 4px;height:4px;border-radius:50%;background:var(--blue);margin-top:6px;opacity:.6}
+.rep .btn{width:100%;background:var(--navy);color:#fff;border:0;border-radius:11px;padding:13px;font:inherit;font-size:13px;font-weight:680;cursor:pointer}
+.rep .btn:hover{background:#173A63}
+
+/* ---------- disclaimer ---------- */
+.disc{margin-top:16px;border-radius:12px;padding:12px 13px;background:#EFF3F8;border:1px solid #E3E9F1}
+.disc b{display:block;font-size:10px;font-weight:700;color:#5B6B80;margin-bottom:5px;letter-spacing:.02em}
+.disc p{margin:0;font-size:9.8px;color:#76839A;line-height:1.7}
+.foot{margin:14px 0 0;text-align:center;font-size:9.5px;color:#9AA6B5;line-height:1.6}
+
+/* ---------- sticky cta ---------- */
+.cta{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:#fff;
+  border-top:1px solid var(--line);
+  padding:10px 18px calc(11px + env(safe-area-inset-bottom));
+}
+.cta-in{max-width:430px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.cta-tx{flex:1;min-width:0}
+.cta-tx span{display:block;font-size:9.5px;color:var(--sub2);letter-spacing:.02em}
+.cta-tx b{font-size:12.5px;font-weight:700;color:var(--navy);letter-spacing:-0.02em}
+.cta .btn{background:var(--navy);color:#fff;border:0;border-radius:11px;padding:12px 15px;font:inherit;font-size:12.5px;font-weight:680;cursor:pointer;white-space:nowrap}
+
+/* ---------- modal ---------- */
+.mw{position:fixed;inset:0;z-index:80;display:none}
+.mw.open{display:block}
+.mbd{position:absolute;inset:0;background:rgba(12,24,40,.5);backdrop-filter:blur(3px);animation:fade .2s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;max-width:430px;margin:0 auto;max-height:93vh;overflow-y:auto;
+  background:#fff;border-radius:20px 20px 0 0;padding:8px 20px calc(22px + env(safe-area-inset-bottom));
+  animation:up .3s cubic-bezier(.22,.9,.25,1);
+}
+@keyframes up{from{transform:translateY(40px)}to{transform:none}}
+.grab{width:34px;height:4px;border-radius:3px;background:#DDE4EE;margin:7px auto 16px}
+.mclose{position:absolute;right:16px;top:16px;width:28px;height:28px;border-radius:50%;background:#F2F5FA;border:0;color:#5C6B80;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sheet .tag{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--blue);background:#EAF3FD;padding:3px 7px;border-radius:5px}
+.sheet h2{margin:10px 0 4px;font-size:20px;font-weight:740;letter-spacing:-0.04em;color:var(--navy)}
+.sheet .lead{margin:0;font-size:11.5px;color:var(--sub);line-height:1.6}
+.mprev{display:flex;gap:10px;align-items:center;margin:14px 0;padding:11px;border:1px solid var(--line);border-radius:11px;background:#FAFCFF}
+.mprev .pdf{width:34px;height:42px;border-radius:4px;background:#fff;border:1px solid #D9E2EE;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-size:6px;color:#B03A2E;font-weight:800;letter-spacing:.04em}
+.mprev .mt b{display:block;font-size:11.5px;font-weight:650;color:var(--navy)}
+.mprev .mt span{display:block;font-size:9.5px;color:var(--sub2);margin-top:2px}
+.mfield{margin-bottom:9px}
+.mfield label{display:block;font-size:10px;font-weight:600;color:var(--sub);margin-bottom:5px}
+.mfield input{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:16px;padding:11px 12px;outline:none;color:var(--ink)}
+.mfield input:focus{border-color:#8FB4DD;box-shadow:0 0 0 3px rgba(31,90,166,.07)}
+.mbtn{width:100%;background:var(--navy);color:#fff;border:0;border-radius:11px;padding:14px;font:inherit;font-size:13.5px;font-weight:680;cursor:pointer;margin-top:3px}
+.mfine{margin:9px 0 0;font-size:9px;color:var(--sub2);text-align:center;line-height:1.6}
+.err{color:#C0392F;font-size:10.5px;margin-top:6px;display:none}
+.done{text-align:center;padding:12px 0 2px}
+.done .ring{width:52px;height:52px;border-radius:50%;background:var(--safe-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 13px}
+.done h3{margin:0 0 6px;font-size:17px;font-weight:700;color:var(--navy)}
+.done p{margin:0;font-size:11.5px;color:var(--sub);line-height:1.6}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:90px;transform:translate(-50%,8px);z-index:70;
+  background:#12253F;color:#fff;font-size:11.5px;padding:10px 15px;border-radius:100px;
+  opacity:0;pointer-events:none;transition:all .22s ease;white-space:nowrap;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <div class="hd-in">
+    <div class="brand">
+      <div class="logo">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.8 13.4 3.7v4.1c0 3.2-2.2 5.2-5.4 6.4-3.2-1.2-5.4-3.2-5.4-6.4V3.7L8 1.8Z" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.7 7.9 7.3 9.5l3.1-3.2" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <b>전세체크</b>
+      <span class="beta">BETA</span>
+    </div>
+    <a class="hd-link" href="#checklist">
+      체크리스트
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="#8794A6" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="intro">
+    <h1>계약 전 <b>3초</b>,<br>이 매물의 위험도.</h1>
+    <p>매매가·보증금·근저당만 넣으면 깡통전세 비율과 HUG 보증보험 한도를 바로 계산합니다.</p>
+  </div>
+
+  <!-- 결과 -->
+  <section class="risk" id="riskCard" aria-live="polite">
+    <div class="r-top"><span>종합 위험도</span><b id="scoreTxt">— / 100</b></div>
+    <div class="r-main">
+      <div>
+        <div class="r-label" id="bandLabel" data-b="empty">—</div>
+        <p class="r-sub" id="bandSub">매물 정보를 입력하거나 아래 샘플로 체험해 보세요.</p>
+      </div>
+    </div>
+    <div class="r-bar"><i id="riskBar" style="width:0%"></i></div>
+    <div class="r-ticks"><span>위험</span><span>주의</span><span>안전</span></div>
+    <div class="r-grid">
+      <div><span>전세가율</span><b class="num" id="kRate">—</b></div>
+      <div><span>선순위+보증금</span><b class="num" id="kExpo">—</b></div>
+      <div><span>HUG 한도</span><b class="num sm" id="kHug">—</b></div>
+    </div>
+  </section>
+
+  <div class="samples">
+    <button class="smp safe" id="sampleSafe"><i></i>안전 매물 샘플</button>
+    <button class="smp risk" id="sampleRisk"><i></i>깡통전세 위험 샘플</button>
+  </div>
+
+  <!-- 매물 정보 -->
+  <section class="sec">
+    <div class="sec-h">
+      <div><h2>매물 정보</h2><p>등기부등본과 건축물대장을 보며 입력하세요</p></div>
+      <span class="k">STEP 1</span>
+    </div>
+    <div class="grid2">
+      <div class="mf">
+        <label for="in-sale">매매가</label>
+        <div class="in"><input id="in-sale" type="text" inputmode="numeric" placeholder="38,000"><span class="u">만원</span></div>
+        <div class="conv" id="conv-sale"></div>
+      </div>
+      <div class="mf">
+        <label for="in-deposit">보증금</label>
+        <div class="in"><input id="in-deposit" type="text" inputmode="numeric" placeholder="23,000"><span class="u">만원</span></div>
+        <div class="conv" id="conv-deposit"></div>
+      </div>
+      <div class="mf">
+        <label for="in-official">공시가격</label>
+        <div class="in"><input id="in-official" type="text" inputmode="numeric" placeholder="26,000"><span class="u">만원</span></div>
+        <div class="conv" id="conv-official"></div>
+      </div>
+      <div class="mf">
+        <label for="in-lien">선순위 근저당</label>
+        <div class="in"><input id="in-lien" type="text" inputmode="numeric" placeholder="0"><span class="u">만원</span></div>
+        <div class="conv" id="conv-lien">채권최고액 기준</div>
+      </div>
+      <div class="mf wide">
+        <label>지역 (HUG 보증금 상한)</label>
+        <div class="seg" id="regionSeg">
+          <button type="button" data-region="metro" aria-pressed="true">수도권 · 7억</button>
+          <button type="button" data-region="other" aria-pressed="false">그 외 · 5억</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-label">권리·건물 상태 <span>등기부 갑구 · 건축물대장</span></div>
+    <div class="grid2">
+      <div class="mf">
+        <label>신탁등기</label>
+        <div class="seg tight" data-toggle="trust">
+          <button type="button" data-val="0" aria-pressed="true">없음</button>
+          <button type="button" data-val="1" aria-pressed="false">있음</button>
+        </div>
+        <div class="conv">소유자가 신탁사면 위험</div>
+      </div>
+      <div class="mf">
+        <label>위반건축물</label>
+        <div class="seg tight" data-toggle="illegal">
+          <button type="button" data-val="0" aria-pressed="true">없음</button>
+          <button type="button" data-val="1" aria-pressed="false">있음</button>
+        </div>
+        <div class="conv">표기 시 보증보험 불가</div>
+      </div>
+      <div class="mf wide">
+        <label>건축물 용도</label>
+        <div class="seg tight" data-toggle="commercial">
+          <button type="button" data-val="0" aria-pressed="true">주택</button>
+          <button type="button" data-val="1" aria-pressed="false">근린생활시설</button>
+        </div>
+        <div class="conv">근린생활시설은 전세보증보험 대상이 아닙니다</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 비율 -->
+  <section class="sec">
+    <div class="sec-h">
+      <div><h2>선순위 + 보증금 비율</h2><p>내 보증금보다 먼저 돌아가는 돈</p></div>
+      <span class="k">STEP 2</span>
+    </div>
+    <div class="card pad">
+      <div class="ratio-num"><b class="num" id="expoNum">—</b><span>%</span></div>
+      <p class="ratio-note" id="expoNote">매매가 대비 (보증금 + 선순위 근저당) 비율입니다.</p>
+      <div class="bar"><i id="expoBar" style="width:0%;background:#C9D4E2"></i></div>
+      <div class="scale"><span>0%</span><span>70% 주의</span><span>80% 위험</span><span>100%</span></div>
+    </div>
+  </section>
+
+  <!-- HUG -->
+  <section class="sec">
+    <div class="sec-h">
+      <div><h2>HUG 보증보험 한도</h2><p>공시가격 × 126% = 가입 가능 상한</p></div>
+      <span class="k">STEP 3</span>
+    </div>
+    <div class="card pad" id="hugCard">
+      <div class="rows" id="hugRows"></div>
+      <div id="hugVerdict"></div>
+      <p class="fine">공시가격 140%를 HUG 인정 주택가격으로 보고 담보인정비율 90%를 적용한 값입니다(2026년 11월 HUG 상품개요 기준). 아파트·주거용 오피스텔은 KB시세가 우선 적용되어 실제 한도가 달라질 수 있고, 선순위채권은 주택가격의 60% 이내여야 합니다.</p>
+    </div>
+  </section>
+
+  <!-- 위험 요인 -->
+  <section class="sec">
+    <div class="sec-h">
+      <div><h2>위험 요인</h2><p>점수에 반영된 항목만 표시합니다</p></div>
+      <span class="k">DETAIL</span>
+    </div>
+    <div class="card pad" id="factCard">
+      <div class="empty">입력된 매물이 없습니다.</div>
+    </div>
+  </section>
+
+  <!-- 체크리스트 -->
+  <section class="sec" id="checklist">
+    <div class="sec-h">
+      <div><h2>등기부 · 건축물대장 체크</h2><p>계약 전에 눈으로 확인할 것</p></div>
+      <span class="k">CHECK</span>
+    </div>
+    <div class="card pad">
+      <div class="chk-head"><span class="cnt">확인 <b id="chkDone">0</b> / <span id="chkTotal">10</span></span><span style="font-size:10px;color:var(--sub2)">자동 판정 + 직접 확인</span></div>
+      <div class="chk-bar"><i id="chkBar" style="width:0%"></i></div>
+      <div id="chkList"></div>
+    </div>
+  </section>
+
+  <!-- 리포트 -->
+  <section class="sec">
+    <div class="rep">
+      <div class="rep-top"><span class="tag">상세 리포트</span><span style="font-size:10px;color:var(--sub2)">PDF · A4 4장</span></div>
+      <h3>이 매물, 계약해도 될까요?</h3>
+      <p class="d">등기부·건축물대장 판독 결과와 HUG 한도 산출 내역, 계약서에 넣을 특약 문구까지 한 장으로 정리합니다.</p>
+      <div class="price"><b class="num">9,900원</b><s>정가</s><span>베타 기간 무료</span></div>
+      <ul>
+        <li>선순위·보증금 비율 상세 산출 (근저당 채권최고액 기준)</li>
+        <li>HUG 가입 가능 여부와 부족액, 대안 구조</li>
+        <li>등기부 갑구·을구에서 확인할 조항 하이라이트</li>
+        <li>계약 전 체크 10선 + 특약 문구 3종</li>
+      </ul>
+      <button class="btn" id="openReport">무료 베타 신청</button>
+    </div>
+    <div class="disc">
+      <b>면책 고지</b>
+      <p>본 결과는 입력한 정보와 공개된 기준으로 계산한 참고용 추정치이며, 등기부등본·건축물대장의 실제 내용을 열람해 확인한 것이 아닙니다. 법적 효력이나 투자 판단의 근거가 될 수 없고, HUG 가입 가능 여부는 보증기관 심사에 따라 달라집니다. 계약 전 공인중개사·법무사·HUG(1566-9009)에 반드시 확인하세요. 입력값이 사실과 다르면 결과도 달라집니다.</p>
+    </div>
+    <p class="foot">MVP 프로토타입 · 입력한 정보는 이 기기(브라우저)에만 저장됩니다.</p>
+  </section>
+</div>
+
+<div class="cta">
+  <div class="cta-in">
+    <div class="cta-tx"><span>상세 리포트 · 정가 9,900원</span><b>베타 기간 무료로 받기</b></div>
+    <button class="btn" id="openReport2">신청</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 리포트 모달 -->
+<div class="mw" id="reportModal" aria-hidden="true">
+  <div class="mbd" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="repTitle">
+    <button class="mclose" data-close aria-label="닫기">✕</button>
+    <div class="grab"></div>
+    <span class="tag">BETA FREE</span>
+    <h2 id="repTitle">상세 리포트 신청</h2>
+    <p class="lead">베타 기간에는 무료로 보내드립니다. 결제는 발생하지 않습니다.</p>
+    <div class="mprev">
+      <div class="pdf">PDF</div>
+      <div class="mt">
+        <b>전세 매물 위험도 리포트</b>
+        <span id="prevSummary">입력한 매물 기준 · A4 4장</span>
+      </div>
+    </div>
+    <div id="repForm">
+      <div class="mfield"><label>받으실 이메일</label><input id="repEmail" type="email" inputmode="email" placeholder="name@example.com" autocomplete="email"></div>
+      <div class="mfield"><label>연락처 (선택)</label><input id="repPhone" type="tel" inputmode="tel" placeholder="010-0000-0000" autocomplete="tel"></div>
+      <div class="err" id="repErr">이메일 주소를 확인해 주세요.</div>
+      <button class="mbtn" id="repSubmit">무료로 신청하기</button>
+      <p class="mfine">신청 후 1시간 내 발송(영업일 기준) · 이 프로토타입에서는 실제 발송되지 않고 기기에만 저장됩니다.</p>
+    </div>
+    <div class="done" id="repDone" hidden>
+      <div class="ring"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5 9.5 17 19 7.5" stroke="#0C8A68" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h3>신청되었습니다</h3>
+      <p><span id="repDoneMail" style="color:#1F5AA6;font-weight:600">—</span> 로<br>리포트를 보내드리겠습니다.</p>
+      <p style="margin-top:9px;font-size:9.5px;color:#9AA6B5">프로토타입이라 실제 발송은 이루어지지 않습니다.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(s,r){ return (r||document).querySelector(s); };
+  var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  var state = {region:'metro', trust:0, illegal:0, commercial:0};
+  var money = {sale:0, deposit:0, official:0, lien:0};
+  var manual = {};
+
+  function won(n){
+    return Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function eok(n){
+    if(!n) return '';
+    var e = Math.floor(n/10000), m = Math.round(n%10000);
+    if(e && m) return e + '억 ' + won(m) + '만원';
+    if(e) return e + '억원';
+    return won(m) + '만원';
+  }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+  function pct(v){ return (Math.round(v*10)/10).toFixed(1); }
+
+  /* ---------- money inputs ---------- */
+  ['sale','deposit','official','lien'].forEach(function(id){
+    var el = $('#in-'+id);
+    el.addEventListener('input', function(){
+      var d = el.value.replace(/[^0-9]/g,'').slice(0,12);
+      var n = d ? parseInt(d,10) : 0;
+      money[id] = n;
+      el.value = d ? won(n) : '';
+      var conv = $('#conv-'+id);
+      if(id === 'lien' && !n){ conv.textContent = '채권최고액 기준'; }
+      else { conv.textContent = n ? eok(n) : (id==='lien' ? '채권최고액 기준' : ''); }
+      calc();
+    });
+  });
+
+  $$('#regionSeg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      state.region = b.dataset.region;
+      $$('#regionSeg button').forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      calc();
+    });
+  });
+
+  $$('[data-toggle]').forEach(function(seg){
+    var key = seg.dataset.toggle;
+    $$('button', seg).forEach(function(b){
+      b.addEventListener('click', function(){
+        state[key] = parseInt(b.dataset.val,10);
+        $$('button', seg).forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        calc();
+      });
+    });
+  });
+
+  /* ---------- calculation ---------- */
+  function compute(){
+    var sale = money.sale, dep = money.deposit, off = money.official, lien = money.lien;
+    if(!sale || !dep) return null;
+
+    var exposure = (dep + lien) / sale * 100;
+    var jeonse = dep / sale * 100;
+    var housePrice = off ? off * 1.4 : 0;
+    var cap = housePrice ? housePrice * 0.9 : 0;
+    var available = cap ? cap - lien : 0;
+    var overBy = cap ? dep - available : null;
+    var lienLimit = housePrice ? housePrice * 0.6 : 0;
+    var depCap = state.region === 'metro' ? 70000 : 50000;
+
+    var score = 100, factors = [];
+
+    if(exposure > 80){
+      score -= 42;
+      factors.push({sev:'d', title:'선순위+보증금 '+pct(exposure)+'%', body:'매매가의 80%를 넘었습니다. 집값이 조금만 떨어져도 보증금을 다 돌려받기 어려운 구조입니다.', pt:-42});
+    } else if(exposure > 70){
+      score -= 22;
+      factors.push({sev:'w', title:'선순위+보증금 '+pct(exposure)+'%', body:'70%를 넘어 경매 시 회수 위험이 생깁니다. 매매가 산정 근거를 다시 확인하세요.', pt:-22});
+    } else if(exposure > 60){
+      score -= 8;
+      factors.push({sev:'w', title:'선순위+보증금 '+pct(exposure)+'%', body:'60%를 조금 넘습니다. 시세가 실제 매매가와 맞는지 실거래가로 대조해 보세요.', pt:-8});
+    } else {
+      factors.push({sev:'o', title:'선순위+보증금 '+pct(exposure)+'%', body:'매매가의 60% 이내로, 경매가 나도 보증금을 먼저 받을 여지가 있습니다.', pt:0});
+    }
+
+    if(cap){
+      if(overBy > 0){
+        score -= 32;
+        factors.push({sev:'d', title:'HUG 한도 초과 '+eok(overBy), body:'가입 가능 보증금('+eok(available)+')보다 보증금이 큽니다. 보증보험 없이 계약하게 됩니다.', pt:-32});
+      } else if(overBy > -cap*0.08){
+        score -= 12;
+        factors.push({sev:'w', title:'HUG 한도에 거의 맞닿음', body:'여유가 '+eok(-overBy)+'뿐입니다. 공시가격이 조정되면 가입이 막힐 수 있습니다.', pt:-12});
+      } else {
+        factors.push({sev:'o', title:'HUG 가입 가능 · 여유 '+eok(-overBy), body:'보증금이 가입 한도 안에 들어옵니다. 가입은 잔금 전에 신청하세요.', pt:0});
+      }
+      if(lien > lienLimit){
+        score -= 20;
+        factors.push({sev:'d', title:'선순위채권 60% 초과', body:'근저당이 HUG 인정 주택가격의 60%를 넘습니다. 보증보험 가입이 거절되는 사유입니다.', pt:-20});
+      }
+    } else {
+      factors.push({sev:'w', title:'공시가격 미입력', body:'HUG 한도를 계산할 수 없습니다. 공시가격을 넣으면 가입 가능 여부까지 확인합니다.', pt:0});
+    }
+
+    if(state.trust){
+      score -= 38;
+      factors.push({sev:'d', title:'신탁등기 있음', body:'소유권이 신탁사에 있습니다. 임대인과 계약해도 보증금 반환 의무자가 달라집니다.', pt:-38});
+    }
+    if(state.illegal){
+      score -= 24;
+      factors.push({sev:'d', title:'위반건축물', body:'건축물대장에 위반 표기가 있으면 HUG 보증보험에 가입할 수 없습니다.', pt:-24});
+    }
+    if(state.commercial){
+      score -= 20;
+      factors.push({sev:'d', title:'근린생활시설', body:'주택이 아니어서 전세보증보험 대상이 아닙니다. 주거용으로 쓰는 계약은 보호받기 어렵습니다.', pt:-20});
+    }
+    if(dep > depCap){
+      score -= 18;
+      factors.push({sev:'d', title:'보증금 지역 상한 초과', body:'HUG 신청 가능 보증금('+(depCap/10000)+'억)을 넘습니다. 보증보험 가입이 불가합니다.', pt:-18});
+    }
+
+    score = clamp(Math.round(score), 3, 100);
+    var band = score >= 78 ? 'safe' : score >= 52 ? 'warn' : 'danger';
+
+    return {sale:sale, dep:dep, off:off, lien:lien, exposure:exposure, jeonse:jeonse,
+      housePrice:housePrice, cap:cap, available:available, overBy:overBy, lienLimit:lienLimit,
+      depCap:depCap, score:score, band:band, factors:factors};
+  }
+
+  /* ---------- render ---------- */
+  function calc(){
+    var r = compute();
+    renderRisk(r);
+    renderRatio(r);
+    renderHug(r);
+    renderFactors(r);
+    renderChecklist(r);
+    updatePrev(r);
+  }
+
+  var BAND_TXT = {safe:'안전', warn:'주의', danger:'위험'};
+  var BAND_COLOR = {safe:'#5BE0AF', warn:'#FFC861', danger:'#FF8C82'};
+  var BAR_COLOR = {safe:'#0C8A68', warn:'#D08A12', danger:'#C0392F'};
+
+  function renderRisk(r){
+    var label = $('#bandLabel'), sub = $('#bandSub'), score = $('#scoreTxt');
+    if(!r){
+      label.textContent = '—'; label.setAttribute('data-b','empty');
+      sub.textContent = '매물 정보를 입력하거나 아래 샘플로 체험해 보세요.';
+      score.textContent = '— / 100';
+      $('#riskBar').style.width = '0%';
+      $('#kRate').textContent = '—'; $('#kExpo').textContent = '—'; $('#kHug').textContent = '—';
+      $('#kHug').className = 'num sm';
+      return;
+    }
+    label.textContent = BAND_TXT[r.band];
+    label.setAttribute('data-b', r.band);
+    score.textContent = r.score + ' / 100';
+    $('#riskBar').style.width = r.score + '%';
+    $('#riskBar').style.background = BAND_COLOR[r.band];
+
+    if(r.band === 'safe') sub.textContent = '보증금과 선순위를 합쳐도 매매가의 '+pct(r.exposure)+'%입니다. 계약 구조가 무리하지 않습니다.';
+    else if(r.band === 'warn') sub.textContent = '선순위와 보증금이 매매가의 '+pct(r.exposure)+'%로, 회수 여유가 크지 않습니다.';
+    else sub.textContent = '구조적으로 보증금을 돌려받기 어려울 수 있습니다. 계약 전 전문가 확인이 필요합니다.';
+
+    $('#kRate').textContent = pct(r.jeonse) + '%';
+    $('#kExpo').textContent = pct(r.exposure) + '%';
+    var hug = $('#kHug');
+    if(r.cap){
+      if(r.overBy > 0){ hug.textContent = '초과 ' + eok(r.overBy); hug.className = 'num sm no'; }
+      else { hug.textContent = '여유 ' + eok(-r.overBy); hug.className = 'num sm ok'; }
+    } else {
+      hug.textContent = '공시가 필요'; hug.className = 'num sm';
+    }
+  }
+
+  function renderRatio(r){
+    if(!r){
+      $('#expoNum').textContent = '—';
+      $('#expoNote').textContent = '매매가 대비 (보증금 + 선순위 근저당) 비율입니다.';
+      $('#expoBar').style.width = '0%'; $('#expoBar').style.background = '#C9D4E2';
+      return;
+    }
+    $('#expoNum').textContent = pct(r.exposure);
+    $('#expoBar').style.width = clamp(r.exposure,0,100) + '%';
+    $('#expoBar').style.background = BAR_COLOR[r.band];
+    var note = '매매가 '+eok(r.sale)+' 중 보증금 '+eok(r.dep);
+    if(r.lien) note += ' + 선순위 근저당 '+eok(r.lien);
+    note += ' = '+eok(r.dep + r.lien)+'입니다.';
+    if(r.exposure > 80) note += ' 80%를 넘으면 집값이 20%만 떨어져도 보증금 전액을 못 받을 수 있습니다.';
+    else if(r.exposure > 70) note += ' 70%부터는 경매 시 회수 위험이 커집니다.';
+    else note += ' 70% 이하면 상대적으로 안전한 구간입니다.';
+    $('#expoNote').textContent = note;
+  }
+
+  function renderHug(r){
+    var rows = $('#hugRows'), verdict = $('#hugVerdict');
+    if(!r || !r.off){
+      rows.innerHTML = '<div class="empty">공시가격을 입력하거나 샘플을 불러오면<br>가입 가능 보증금까지 계산합니다.</div>';
+      verdict.innerHTML = '';
+      return;
+    }
+    rows.innerHTML =
+      '<div class="rw"><span>공시가격</span><b>'+eok(r.off)+'</b></div>'+
+      '<div class="rw"><span>HUG 인정 주택가격 <em>공시가 × 140%</em></span><b>'+eok(r.housePrice)+'</b></div>'+
+      '<div class="rw"><span>보증한도 <em>주택가격 × 90%</em></span><b>'+eok(r.cap)+'</b></div>'+
+      '<div class="rw"><span>선순위 근저당 차감</span><b>'+(r.lien ? '-'+eok(r.lien) : '0원')+'</b></div>'+
+      '<div class="rw tot"><span>가입 가능 보증금</span><b>'+eok(r.available)+'</b></div>';
+
+    if(r.overBy > 0){
+      verdict.innerHTML = '<div class="verdict no">보증금 '+eok(r.dep)+'은 한도를 '+eok(r.overBy)+' 초과합니다. 이 상태로는 HUG 보증보험에 가입할 수 없습니다.</div>';
+    } else if(r.overBy > -r.cap*0.08){
+      verdict.innerHTML = '<div class="verdict warn">가입은 가능하지만 여유가 '+eok(-r.overBy)+'뿐입니다. 공시가격 변동에 따라 한도가 줄 수 있습니다.</div>';
+    } else {
+      verdict.innerHTML = '<div class="verdict ok">보증금 '+eok(r.dep)+'은 한도 안에 있습니다. 여유 '+eok(-r.overBy)+'.</div>';
+    }
+    if(r.lien > r.lienLimit){
+      verdict.innerHTML += '<div class="verdict no" style="margin-top:6px">선순위채권 '+eok(r.lien)+'이 주택가격의 60%('+eok(r.lienLimit)+')를 넘어, 금액과 무관하게 가입이 거절됩니다.</div>';
+    }
+  }
+
+  function renderFactors(r){
+    var host = $('#factCard');
+    if(!r){
+      host.innerHTML = '<div class="empty">입력된 매물이 없습니다.</div>';
+      return;
+    }
+    var order = {d:0, w:1, o:2};
+    var list = r.factors.slice().sort(function(a,b){ return order[a.sev]-order[b.sev]; });
+    host.innerHTML = list.map(function(f){
+      var icon = f.sev === 'd'
+        ? '<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 1.6v4.2M5 8.1v.3" stroke="#C0392F" stroke-width="1.5" stroke-linecap="round"/></svg>'
+        : f.sev === 'w'
+        ? '<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 1.6v4M5 7.8v.4" stroke="#B9760B" stroke-width="1.5" stroke-linecap="round"/></svg>'
+        : '<svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 5.2 4 7.2 8 3" stroke="#0C8A68" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var pts = f.pt ? '<span class="pt">'+f.pt+'</span>' : '<span class="pt o">0</span>';
+      return '<div class="fact '+f.sev+'"><div class="ic">'+icon+'</div><div class="tx"><b>'+f.title+'</b><p>'+f.body+'</p></div>'+pts+'</div>';
+    }).join('');
+  }
+
+  /* ---------- checklist ---------- */
+  function checklistItems(r){
+    var items = [];
+    items.push({id:'owner', manual:true, title:'임대인 = 등기부 소유자', desc:'계약서 이름과 등기부 갑구 소유자가 같은지 확인'});
+    items.push({id:'trust', auto:true, title:'신탁등기 여부', desc:'갑구에 신탁 표기가 있으면 임대인이 소유자가 아닙니다',
+      state: state.trust ? 'bad' : 'ok', flag: state.trust ? '신탁 있음' : '신탁 없음'});
+    items.push({id:'seizure', manual:true, title:'압류 · 가압류 · 경매신청', desc:'갑구에 권리침해 표기가 없는지 확인'});
+    items.push({id:'lienrow', auto:true, title:'을구 근저당 · 채권최고액', desc:'근저당 건수와 채권최고액, 설정일을 확인',
+      state: r ? (r.lien > 0 ? 'warn' : 'ok') : 'ok', flag: r && r.lien ? eok(r.lien) : '없음'});
+    items.push({id:'illegal', auto:true, title:'위반건축물 표기', desc:'건축물대장에 위반 표기가 있으면 보증보험 불가',
+      state: state.illegal ? 'bad' : 'ok', flag: state.illegal ? '위반 표기' : '표기 없음'});
+    items.push({id:'use', auto:true, title:'건축물 용도 (주택 여부)', desc:'근린생활시설·공관은 보증보험 대상이 아닙니다',
+      state: state.commercial ? 'bad' : 'ok', flag: state.commercial ? '근린생활시설' : '주택'});
+    items.push({id:'tax', manual:true, title:'임대인 국세 · 지방세 완납', desc:'완납증명서 요구 — 체납 시 보증금 반환이 어렵습니다'});
+    items.push({id:'other', manual:true, title:'다른 세대 전입 여부', desc:'전입세대확인서로 선순위 임차인 보증금 확인'});
+    items.push({id:'special', manual:true, title:'계약서 특약 확인', desc:'근저당 말소, 반환채권 양도 금지, 보증보험 미가입 시 해지'});
+    items.push({id:'move', manual:true, title:'전입신고 + 확정일자', desc:'잔금일 당일 즉시 — 대항력과 우선변제권이 생깁니다'});
+    return items;
+  }
+
+  function renderChecklist(r){
+    var items = checklistItems(r);
+    var host = $('#chkList');
+    var total = items.length;
+    var done = 0;
+    host.innerHTML = '';
+
+    items.forEach(function(it){
+      if(it.manual ? manual[it.id] : true) done++;
+      var el = document.createElement('div');
+      el.className = 'chk' + (it.manual ? '' : ' auto') + (it.manual && manual[it.id] ? ' on' : '');
+      var flag = '';
+      if(it.auto){
+        var cls = it.state === 'bad' ? 'auto-bad' : it.state === 'warn' ? 'auto-warn' : 'auto-ok';
+        flag = '<span class="flag '+cls+'">'+it.flag+'</span>';
+      } else {
+        flag = '<span class="flag manual">'+(manual[it.id] ? '확인' : '직접 확인')+'</span>';
+      }
+      el.innerHTML =
+        '<span class="box"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.4 6.2 4.8 8.6 9.6 3.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+        '<div class="ct"><b>'+it.title+'</b><p>'+it.desc+'</p></div>'+flag;
+      if(it.manual){
+        el.addEventListener('click', function(){
+          manual[it.id] = !manual[it.id];
+          renderChecklist(r);
+        });
+      }
+      host.appendChild(el);
+    });
+
+    $('#chkDone').textContent = done;
+    $('#chkTotal').textContent = total;
+    $('#chkBar').style.width = Math.round(done/total*100) + '%';
+  }
+
+  /* ---------- samples ---------- */
+  function setMoney(obj){
+    Object.keys(obj).forEach(function(k){
+      money[k] = obj[k];
+      var el = $('#in-'+k);
+      el.value = obj[k] ? won(obj[k]) : (k === 'lien' ? '' : '');
+      var conv = $('#conv-'+k);
+      if(k === 'lien') conv.textContent = obj[k] ? eok(obj[k]) : '채권최고액 기준';
+      else conv.textContent = obj[k] ? eok(obj[k]) : '';
+    });
+  }
+  function setToggles(t){
+    Object.keys(t).forEach(function(k){
+      state[k] = t[k];
+      var seg = $('[data-toggle="'+k+'"]');
+      if(seg){
+        $$('button', seg).forEach(function(b){
+          b.setAttribute('aria-pressed', parseInt(b.dataset.val,10) === t[k] ? 'true' : 'false');
+        });
+      }
+    });
+  }
+  function setRegion(region){
+    state.region = region;
+    $$('#regionSeg button').forEach(function(b){
+      b.setAttribute('aria-pressed', b.dataset.region === region ? 'true' : 'false');
+    });
+  }
+  function resetManual(){ manual = {}; }
+
+  $('#sampleSafe').addEventListener('click', function(){
+    setMoney({sale:38000, deposit:23000, official:26000, lien:0});
+    setToggles({trust:0, illegal:0, commercial:0});
+    setRegion('metro');
+    resetManual();
+    calc();
+    toast('안전 매물 샘플을 불러왔습니다');
+  });
+
+  $('#sampleRisk').addEventListener('click', function(){
+    setMoney({sale:42000, deposit:31000, official:19000, lien:9000});
+    setToggles({trust:1, illegal:1, commercial:0});
+    setRegion('metro');
+    resetManual();
+    calc();
+    toast('깡통전세 위험 샘플을 불러왔습니다');
+  });
+
+  /* ---------- report modal ---------- */
+  var modal = $('#reportModal');
+  var lastFocus = null;
+  function updatePrev(r){
+    if(r){
+      $('#prevSummary').textContent = '보증금 '+eok(r.dep)+' · 위험도 ' + BAND_TXT[r.band] + ' · A4 4장';
+    }
+  }
+  function openRep(){
+    lastFocus = document.activeElement;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('lock');
+    var saved = null;
+    try{ saved = localStorage.getItem('jeonse.report'); }catch(e){}
+    if(saved){
+      $('#repDoneMail').textContent = saved;
+      $('#repForm').hidden = true; $('#repDone').hidden = false;
+    } else {
+      $('#repForm').hidden = false; $('#repDone').hidden = true;
+      setTimeout(function(){ $('#repEmail').focus(); }, 260);
+    }
+  }
+  function closeRep(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('lock');
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  $('#openReport').addEventListener('click', openRep);
+  $('#openReport2').addEventListener('click', openRep);
+  $$('[data-close]', modal).forEach(function(el){ el.addEventListener('click', closeRep); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && modal.classList.contains('open')) closeRep();
+  });
+  $('#repSubmit').addEventListener('click', function(){
+    var email = $('#repEmail').value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
+      $('#repErr').style.display = 'block'; $('#repEmail').focus(); return;
+    }
+    $('#repErr').style.display = 'none';
+    try{ localStorage.setItem('jeonse.report', email); }catch(e){}
+    $('#repDoneMail').textContent = email;
+    $('#repForm').hidden = true; $('#repDone').hidden = false;
+  });
+  $('#repEmail').addEventListener('input', function(){ $('#repErr').style.display = 'none'; });
+
+  function toast(msg){
+    var t = $('#toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove('on'); }, 2000);
+  }
+
+  /* ---------- init ---------- */
+  calc();
+})();
+</script>
+</body>
+</html>
